@@ -223,6 +223,7 @@ const rt=t=>e=>"function"==typeof e?((t,e)=>(customElements.define(t,e),e))(t,e)
     color: white;
     align-self: end;
     justify-self: start;
+    font-weight: bold;
     }
     .events {
     display: flex;

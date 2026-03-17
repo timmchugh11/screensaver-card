@@ -180,6 +180,7 @@ export default css`
     color: white;
     align-self: end;
     justify-self: start;
+    font-weight: bold;
     }
     .events {
     display: flex;
