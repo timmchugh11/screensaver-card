@@ -15,6 +15,9 @@ class ScreesaverEditor extends LitElement {
   @property({ attribute: false }) hass: any; // Oggetto Home Assistant
   @state() private _config: any; // Configurazione della card
   @state() private _valueEntities: string[] = []; // Stato per le entità value_entity
+  @state() private _selectedCalendar = "";
+  @state() private _selectedValueEntity = "";
+  @state() private _selectedEntityIcon = "";
 
   setConfig(config: any) {
     this._config = config;
@@ -62,14 +65,10 @@ class ScreesaverEditor extends LitElement {
         margin-left: auto;
       }
 
-      .select-item,
-      .select-weather {
+      .select-item {
         height: 60px;
         border-radius: 16px;
         width: 80%;
-      }
-      .select-weather {
-        margin-bottom: 10px;
       }
 
       ha-expansion-panel {
@@ -111,9 +110,9 @@ class ScreesaverEditor extends LitElement {
       <ha-expansion-panel outlined>
         <h4 slot="header">
           <ha-icon icon="mdi:weather-cloudy-clock"></ha-icon>
-          Weather Attribution Entity
+          Info Text Entity
         </h4>
-        <div class="content">${this._renderWeatherAttributionSelector()}</div>
+        <div class="content">${this._renderTextSensorSelector()}</div>
       </ha-expansion-panel>
 
       <ha-expansion-panel outlined>
@@ -194,6 +193,38 @@ class ScreesaverEditor extends LitElement {
         </h4>
         <div class="content">${this._renderHideBarCheckbox()}</div>
       </ha-expansion-panel>
+
+      <div class="donations" style="display: flex">
+        <a href="https://www.buymeacoffee.com/madmicio" target="_blank"
+          ><img
+            src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png"
+            alt="Buy Me A Coffee"
+            style="height: 60px !important;width: 217px !important;"
+        /></a>
+        <form
+          action="https://www.paypal.com/donate"
+          method="post"
+          target="_top"
+        >
+          <input type="hidden" name="hosted_button_id" value="U5VQ9LHM82B7Q" />
+          <input
+            type="image"
+            src="https://pics.paypal.com/00/s/ODdjZjVlZjAtOWVmYS00NjQyLTkyZTUtNWQ3MmMzMmIxYTcx/file.PNG"
+            border="0"
+            name="submit"
+            title="PayPal - The safer, easier way to pay online!"
+            alt="Donate with PayPal button"
+            style="height:60px;"
+          />
+          <img
+            alt=""
+            border="0"
+            src="https://www.paypal.com/en_IT/i/scr/pixel.gif"
+            width="1"
+            height="1"
+          />
+        </form>
+      </div>
     `;
   }
 
@@ -237,22 +268,30 @@ class ScreesaverEditor extends LitElement {
   }
 
   private _renderCalendarSelector() {
-    const calendarEntities = this._getCalendarEntities();
+    const schema = [
+      {
+        name: "calendar_entity",
+        label: "",
+        selector: { entity: { domain: "calendar" } },
+      },
+    ];
+    const data = {
+      calendar_entity: this._selectedCalendar,
+    };
 
     return html`
       <div class="select-container">
         <div class="heading">Add Calendar</div>
-        <div style="display: flex; align-items: center;">
-          <select id="calendar_select" class="select-item">
-            <option value="">-- Select a Calendar --</option>
-            ${calendarEntities.map(
-              (entityId: string) =>
-                html`<option value="${entityId}">
-                  ${this.hass.states[entityId]?.attributes?.friendly_name ||
-                  entityId}
-                </option>`
-            )}
-          </select>
+        <div style="display: flex; align-items: flex-start; gap: 1ch;">
+          <div style="flex: 1;">
+            <ha-form
+              .hass=${this.hass}
+              .data=${data}
+              .schema=${schema}
+              .computeLabel=${(s: any) => s.label ?? ""}
+              @value-changed=${this._onCalendarSelectionChanged}
+            ></ha-form>
+          </div>
           <ha-icon icon="mdi:plus" @click=${this._addCalendar}></ha-icon>
         </div>
         ${this._renderCalendarList()}
@@ -288,12 +327,8 @@ class ScreesaverEditor extends LitElement {
   }
 
   private _addCalendar() {
-    const selectElement = this.shadowRoot!.getElementById(
-      "calendar_select"
-    ) as HTMLSelectElement;
-
-    if (selectElement && selectElement.value) {
-      const calendarId = selectElement.value;
+    if (this._selectedCalendar) {
+      const calendarId = this._selectedCalendar;
 
       if (!this._config.calendars?.includes(calendarId)) {
         this._config = {
@@ -303,8 +338,12 @@ class ScreesaverEditor extends LitElement {
         this._dispatchConfigUpdate();
       }
 
-      selectElement.value = ""; // Resetta il menu
+      this._selectedCalendar = "";
     }
+  }
+
+  private _onCalendarSelectionChanged(event: CustomEvent) {
+    this._selectedCalendar = event.detail.value?.calendar_entity ?? "";
   }
 
   private _removeCalendar(calendarId: string) {
@@ -326,45 +365,58 @@ class ScreesaverEditor extends LitElement {
   }
 
   private _renderWeatherSelector() {
-    const weatherEntities = this._getWeatherEntities();
+    const schema = [
+      {
+        name: "entity",
+        label: "",
+        selector: { entity: { domain: "weather" } },
+      },
+    ];
+    const data = {
+      entity: this._config?.entity ?? "",
+    };
 
     return html`
       <div class="select-container">
         <div class="heading">Select Weather Entity</div>
-        <select @change=${this._updateWeatherEntity} class="select-weather">
-          <option value="" ?selected=${!this._config?.entity}>
-            -- Select an entity --
-          </option>
-          ${weatherEntities.map(
-            (entity) =>
-              html`<option
-                value=${entity}
-                ?selected=${this._config?.entity === entity}
-              >
-                ${entity}
-              </option>`
-          )}
-        </select>
+        <ha-form
+          .hass=${this.hass}
+          .data=${data}
+          .schema=${schema}
+          .computeLabel=${(s: any) => s.label ?? ""}
+          @value-changed=${this._updateWeatherEntity}
+        ></ha-form>
       </div>
     `;
   }
 
   private _renderValueEntitySelector() {
-    const allEntities = Object.keys(this.hass.states); // Recupera tutte le entità disponibili
-    const showName = this._config?.value_entity_show_name ?? false;
+    const showName = this._config?.value_entity_show_name ?? true;
     const fontSize = this._config?.value_entity_font_size ?? 5;
+    const schema = [
+      {
+        name: "value_entity_candidate",
+        label: "",
+        selector: { entity: {} },
+      },
+    ];
+    const data = {
+      value_entity_candidate: this._selectedValueEntity,
+    };
 
     return html`
       <div class="select-container">
         <div class="heading">Add Entities to value_entity</div>
-        <div style="display: flex; align-items: center;">
-          <select id="value_entity_select" class="select-item">
-            <option value="">-- Select an Entity --</option>
-            ${allEntities.map(
-              (entityId) =>
-                html`<option value="${entityId}">${entityId}</option>`
-            )}
-          </select>
+        <div style="display: flex; align-items: flex-start; gap: 1ch;">
+          <div style="flex: 1;">
+            <ha-form
+              .hass=${this.hass}
+              .data=${data}
+              .schema=${schema}
+              .computeLabel=${(s: any) => s.label ?? ""}
+              @value-changed=${this._onValueEntitySelectionChanged}
+            ></ha-form>
+          </div>
           <ha-icon
             icon="mdi:plus"
             @click=${this._addEntityToValueEntity}
@@ -424,25 +476,15 @@ class ScreesaverEditor extends LitElement {
     `;
   }
 
-  private _getWeatherEntities(): string[] {
-    return Object.keys(this.hass.states).filter((entityId) =>
-      entityId.startsWith("weather.")
-    );
-  }
-
-  private _updateWeatherEntity(event: Event) {
-    const selectedEntity = (event.target as HTMLSelectElement).value;
+  private _updateWeatherEntity(event: CustomEvent) {
+    const selectedEntity = event.detail.value?.entity as string;
     this._config = { ...this._config, entity: selectedEntity };
     this._dispatchConfigUpdate();
   }
 
   private _addEntityToValueEntity() {
-    const selectElement = this.shadowRoot!.getElementById(
-      "value_entity_select"
-    ) as HTMLSelectElement;
-
-    if (selectElement && selectElement.value) {
-      const entityId = selectElement.value;
+    if (this._selectedValueEntity) {
+      const entityId = this._selectedValueEntity;
 
       if (!this._valueEntities.includes(entityId)) {
         this._valueEntities = [...this._valueEntities, entityId];
@@ -450,8 +492,12 @@ class ScreesaverEditor extends LitElement {
         this._dispatchConfigUpdate();
       }
 
-      selectElement.value = ""; // Resetta il menu
+      this._selectedValueEntity = "";
     }
+  }
+
+  private _onValueEntitySelectionChanged(event: CustomEvent) {
+    this._selectedValueEntity = event.detail.value?.value_entity_candidate ?? "";
   }
 
   private _removeEntityFromValueEntity(entityId: string) {
@@ -463,18 +509,30 @@ class ScreesaverEditor extends LitElement {
   private _entityIcons: { entity: string; icon?: string }[] = []; // Stato locale per entity_icon
 
   _renderEntityIconSelector() {
-    const allEntities = Object.keys(this.hass.states); // Lista di tutte le entità disponibili
+    const schema = [
+      {
+        name: "entity_icon_candidate",
+        label: "",
+        selector: { entity: {} },
+      },
+    ];
+    const data = {
+      entity_icon_candidate: this._selectedEntityIcon,
+    };
 
     return html`
       <div class="select-container">
         <div class="heading">Add Entities for entity_icon</div>
-        <div style="display: flex; align-items: center;">
-          <select id="entity_icon_select" class="select-item">
-            <option value="">-- Select an Entity --</option>
-            ${allEntities.map(
-              (entityId) => html`<option value=${entityId}>${entityId}</option>`
-            )}
-          </select>
+        <div style="display: flex; align-items: flex-start; gap: 1ch;">
+          <div style="flex: 1;">
+            <ha-form
+              .hass=${this.hass}
+              .data=${data}
+              .schema=${schema}
+              .computeLabel=${(s: any) => s.label ?? ""}
+              @value-changed=${this._onEntityIconSelectionChanged}
+            ></ha-form>
+          </div>
           <ha-icon
             icon="mdi:plus"
             @click=${this._addEntityToEntityIcon}
@@ -486,12 +544,8 @@ class ScreesaverEditor extends LitElement {
   }
 
   _addEntityToEntityIcon() {
-    const selectElement = this.shadowRoot!.getElementById(
-      "entity_icon_select"
-    ) as HTMLSelectElement;
-
-    if (selectElement && selectElement.value) {
-      const entityId = selectElement.value;
+    if (this._selectedEntityIcon) {
+      const entityId = this._selectedEntityIcon;
 
       // Verifica che l'entità non sia già presente
       if (!this._entityIcons.some((e) => e.entity === entityId)) {
@@ -499,8 +553,12 @@ class ScreesaverEditor extends LitElement {
         this._updateEntityIconConfig();
       }
 
-      selectElement.value = ""; // Resetta il menu
+      this._selectedEntityIcon = "";
     }
+  }
+
+  private _onEntityIconSelectionChanged(event: CustomEvent) {
+    this._selectedEntityIcon = event.detail.value?.entity_icon_candidate ?? "";
   }
 
   _renderEntityIconList() {
@@ -849,33 +907,64 @@ class ScreesaverEditor extends LitElement {
     }
   }
 
-  private _renderWeatherAttributionSelector() {
-    const allEntities = Object.keys(this.hass.states).filter((id) =>
-      id.startsWith("weather.")
-    );
-    const current = this._config?.weather_attribution_entity ?? "";
+  private _renderTextSensorSelector() {
+    const current =
+      this._config?.text_sensor_entity ??
+      this._config?.weather_attribution_entity ??
+      "";
+    const currentAttribute =
+      this._config?.text_sensor_attribute ??
+      this._config?.weather_attribution_attribute ??
+      "";
+    const availableAttributes = this._getAttributesForTextEntity(current);
+    const schema = [
+      {
+        name: "text_sensor_entity",
+        label: "",
+        selector: { entity: {} },
+      },
+    ];
+    const data = {
+      text_sensor_entity: current,
+    };
 
     return html`
       <div class="select-container">
-        <div class="heading">Select entity to show weather attribution</div>
-        <div style="display: flex; align-items: center;">
-          <select
-            id="weather_attribution_select"
-            class="select-item"
-            .value=${current}
-            @change=${this._setWeatherAttributionEntity}
-          >
-            <option value="">-- None --</option>
-            ${allEntities.map(
-              (entityId) =>
-                html`<option value="${entityId}" ?selected=${entityId === current}>${entityId}</option>`
-            )}
-          </select>
+        <div class="heading">Select entity to show text (state by default)</div>
+        <div style="display: flex; align-items: flex-start; gap: 1ch;">
+          <div style="flex: 1;">
+            <ha-form
+              .hass=${this.hass}
+              .data=${data}
+              .schema=${schema}
+              .computeLabel=${(s: any) => s.label ?? ""}
+              @value-changed=${this._onTextSensorEntityChanged}
+            ></ha-form>
+          </div>
           <ha-icon
             icon="mdi:delete"
-            @click=${this._removeWeatherAttributionEntity}
+            @click=${this._removeTextSensorConfig}
           ></ha-icon>
         </div>
+
+        <div style="margin-top: 1ch; display: flex; align-items: center; gap: 1ch;">
+          <label for="text_sensor_attribute">Attribute (optional):</label>
+          <input
+            id="text_sensor_attribute"
+            type="text"
+            placeholder="e.g. attribution"
+            list="text_sensor_attribute_options"
+            .value=${currentAttribute}
+            @input=${this._updateTextSensorAttribute}
+            style="flex: 1; padding: 0.5ch; font-size: 1em; border: 1px solid var(--divider-color);"
+          />
+          <datalist id="text_sensor_attribute_options">
+            ${availableAttributes.map(
+              (key) => html`<option value="${key}"></option>`
+            )}
+          </datalist>
+        </div>
+
         ${current
           ? html`<div style="margin-top: 1ch;">Current: <strong>${current}</strong></div>`
           : ""}
@@ -883,20 +972,48 @@ class ScreesaverEditor extends LitElement {
     `;
   }
 
-  private _setWeatherAttributionEntity(event: Event) {
-    const value = (event.target as HTMLSelectElement).value;
+  private _onTextSensorEntityChanged(event: CustomEvent) {
+    const value = event.detail.value?.text_sensor_entity as string;
     if (value) {
-      this._config = { ...this._config, weather_attribution_entity: value };
+      const { weather_attribution_entity, ...newConfig } = this._config;
+      this._config = { ...newConfig, text_sensor_entity: value };
     } else {
-      this._removeWeatherAttributionEntity();
+      this._removeTextSensorConfig();
       return;
     }
     this._dispatchConfigUpdate();
   }
 
-  private _removeWeatherAttributionEntity() {
-    const { weather_attribution_entity, ...newConfig } = this._config;
+  private _removeTextSensorConfig() {
+    const {
+      weather_attribution_entity,
+      weather_attribution_attribute,
+      text_sensor_entity,
+      text_sensor_attribute,
+      ...newConfig
+    } = this._config;
     this._config = newConfig;
     this._dispatchConfigUpdate();
+  }
+
+  private _updateTextSensorAttribute(event: Event) {
+    const value = (event.target as HTMLInputElement).value.trim();
+    if (value) {
+      const { weather_attribution_attribute, ...newConfig } = this._config;
+      this._config = { ...newConfig, text_sensor_attribute: value };
+    } else {
+      const {
+        weather_attribution_attribute,
+        text_sensor_attribute,
+        ...newConfig
+      } = this._config;
+      this._config = newConfig;
+    }
+    this._dispatchConfigUpdate();
+  }
+
+  private _getAttributesForTextEntity(entityId: string): string[] {
+    if (!entityId || !this.hass.states[entityId]) return [];
+    return Object.keys(this.hass.states[entityId].attributes || {}).sort();
   }
 }

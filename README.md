@@ -80,6 +80,10 @@ internal_temperature: sensor.internal_temp
 | `entity` | string | **Required** | entity | weather entity |
 | `entity_icon` | string | **option** | entity list | state entity list |
 | `value_entity` |  | **option**| entity list | icon entity list|
+| `value_entity_show_name` | boolean | `false` | `true` / `false` | show or hide the friendly name for `value_entity` |
+| `value_entity_font_size` | number | `5` | `1` to `30` | font size (vh) for the `value_entity` value text |
+| `text_sensor_entity` | string | optional | any entity id | entity used for the info text line |
+| `text_sensor_attribute` | string | optional | attribute key | optional attribute to show instead of sensor state |
 | `landing_page` |  | **Option**| url | landing page afther screensaver | 
 | `internal_temperature` |  | **Option**| sensor | internal temperature sensor|
 | `external_temperature` |  | **Option**| sensor | external temperature sensor|
@@ -95,6 +99,15 @@ If a local rain sensor is configured, when the sensor detects ongoing rain, the 
   # info section
   in this section you can configure a list of entities.
 their friendly name and status will be shown through value_entity:
+
+in the visual editor, you can control if the entity friendly name is visible and set the value text size.
+for yaml configuration, use `value_entity_show_name` and `value_entity_font_size`.
+
+  you can also configure an optional info text line from any entity.
+  set `text_sensor_entity` to any entity and optionally set `text_sensor_attribute` to show a specific attribute (otherwise the entity state is used).
+  in the visual editor, the attribute field now suggests available attributes dynamically for the selected entity.
+
+  for backward compatibility, `weather_attribution_entity` and `weather_attribution_attribute` are still accepted.
 
 alternatively you can show the events of the calendars configured in calendars:
 

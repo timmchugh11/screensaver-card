@@ -430,7 +430,7 @@ export class ScreensaverCard extends LitElement {
 
               const unit = entityState.attributes.unit_of_measurement || "";
 
-              const showName = this.config?.value_entity_show_name ?? false;
+              const showName = this.config?.value_entity_show_name ?? true;
               const fontSize = this.config?.value_entity_font_size ?? 5;
               return html`
                 <div class="entity">
@@ -478,6 +478,24 @@ export class ScreensaverCard extends LitElement {
       window.history.pushState(null, "", path);
       window.dispatchEvent(new Event("location-changed"));
     }
+  }
+
+  private getAttributionText(): string {
+    const entityId =
+      this.config?.text_sensor_entity ?? this.config?.weather_attribution_entity;
+    if (!entityId) return "";
+
+    const entityState = this.hass.states[entityId];
+    if (!entityState) return "";
+
+    const attributeKey =
+      this.config?.text_sensor_attribute ?? this.config?.weather_attribution_attribute;
+    if (attributeKey) {
+      const attributeValue = entityState.attributes?.[attributeKey];
+      return attributeValue != null ? String(attributeValue) : "";
+    }
+
+    return entityState.state != null ? String(entityState.state) : "";
   }
 
   render(): TemplateResult {
@@ -544,6 +562,7 @@ export class ScreensaverCard extends LitElement {
 
     const shouldAlternate = this.config?.value_entity && this.config?.calendars;
     const showEntityState = Math.floor((Date.now() / 7000) % 2) === 0;
+    const attributionText = this.getAttributionText();
 
     return html`
       <ha-card
@@ -618,10 +637,10 @@ export class ScreensaverCard extends LitElement {
             : html`<div></div>`}
         </div>
 
-        ${this.config?.weather_attribution_entity
+        ${attributionText
           ? html`
               <div class="weather-attribution">
-                ${this.hass.states[this.config.weather_attribution_entity]?.attributes?.attribution || ""}
+                ${attributionText}
               </div>
             `
           : ""}
