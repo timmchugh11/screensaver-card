@@ -615,7 +615,7 @@ export class ScreensaverCard extends LitElement {
                   ></ha-icon>
                 `;
               })
-            : html`<div>No entities configured or active</div>`}
+            : html`<div></div>`}
         </div>
 
         ${this.config?.weather_attribution_entity

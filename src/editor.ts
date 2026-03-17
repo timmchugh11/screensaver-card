@@ -194,38 +194,6 @@ class ScreesaverEditor extends LitElement {
         </h4>
         <div class="content">${this._renderHideBarCheckbox()}</div>
       </ha-expansion-panel>
-
-      <div class="donations" style="display: flex">
-        <a href="https://www.buymeacoffee.com/madmicio" target="_blank"
-          ><img
-            src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png"
-            alt="Buy Me A Coffee"
-            style="height: 60px !important;width: 217px !important;"
-        /></a>
-        <form
-          action="https://www.paypal.com/donate"
-          method="post"
-          target="_top"
-        >
-          <input type="hidden" name="hosted_button_id" value="U5VQ9LHM82B7Q" />
-          <input
-            type="image"
-            src="https://pics.paypal.com/00/s/ODdjZjVlZjAtOWVmYS00NjQyLTkyZTUtNWQ3MmMzMmIxYTcx/file.PNG"
-            border="0"
-            name="submit"
-            title="PayPal - The safer, easier way to pay online!"
-            alt="Donate with PayPal button"
-            style="height:60px;"
-          />
-          <img
-            alt=""
-            border="0"
-            src="https://www.paypal.com/en_IT/i/scr/pixel.gif"
-            width="1"
-            height="1"
-          />
-        </form>
-      </div>
     `;
   }
 
