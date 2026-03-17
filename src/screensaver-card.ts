@@ -391,50 +391,15 @@ export class ScreensaverCard extends LitElement {
   }
 
   restoreOriginalState() {
-    // Ripristina il padding del div con id "view"
-    const viewDiv = document
-      .querySelector("body > home-assistant")?.shadowRoot
-      ?.querySelector("home-assistant-main")?.shadowRoot
-      ?.querySelector("ha-drawer > partial-panel-resolver > ha-panel-lovelace")?.shadowRoot
-      ?.querySelector("hui-root")?.shadowRoot
-      ?.querySelector("#view");
-
-    if (viewDiv) {
-      (viewDiv as HTMLElement).style.setProperty(
-        "padding",
-        "calc(var(--header-height) + env(safe-area-inset-top))"
-      );
-      console.log("Padding del div '#view' ripristinato.");
-    }
-
-    // Ripristina la larghezza del drawer
-    const haDrawer = document
-      .querySelector("body > home-assistant")?.shadowRoot
-      ?.querySelector("home-assistant-main")?.shadowRoot
-      ?.querySelector("ha-drawer");
-
-    if (haDrawer) {
-      (haDrawer as HTMLElement).style.setProperty(
-        "--mdc-drawer-width",
-        "calc(256px + env(safe-area-inset-left))"
-      );
-      console.log("Stile '--mdc-drawer-width' ripristinato.");
-    }
-
-    // Ripristina lo stile display del div.header
-    const headerDiv = document
-      .querySelector("body > home-assistant")?.shadowRoot
-      ?.querySelector("home-assistant-main")?.shadowRoot
-      ?.querySelector("ha-drawer > partial-panel-resolver > ha-panel-lovelace")?.shadowRoot
-      ?.querySelector("hui-root")?.shadowRoot
-      ?.querySelector("div > div.header");
-
-    if (headerDiv) {
-      (headerDiv as HTMLElement).style.removeProperty("display");
-      console.log("Stile 'display' ripristinato per 'div.header'.");
-    } else {
-      console.error("Elemento 'div.header' non trovato per il ripristino.");
-    }
+    const ham = document.querySelector("body > home-assistant")?.shadowRoot?.querySelector("home-assistant-main");
+    const drawer = ham?.shadowRoot?.querySelector("ha-drawer") as HTMLElement | null;
+    if (drawer) drawer.style.removeProperty("--mdc-drawer-width");
+    const panel = drawer?.querySelector("partial-panel-resolver > ha-panel-lovelace") as Element | null;
+    const root = (panel as Element | null)?.shadowRoot?.querySelector("hui-root");
+    const view = root?.shadowRoot?.querySelector("#view") as HTMLElement | null;
+    if (view) view.style.removeProperty("padding");
+    const header = root?.shadowRoot?.querySelector("div > div.header") as HTMLElement | null;
+    if (header) header.style.removeProperty("display");
   }
 
 
@@ -465,10 +430,12 @@ export class ScreensaverCard extends LitElement {
 
               const unit = entityState.attributes.unit_of_measurement || "";
 
+              const showName = this.config?.value_entity_show_name ?? false;
+              const fontSize = this.config?.value_entity_font_size ?? 5;
               return html`
                 <div class="entity">
-                  <span class="friendly-name">${friendlyName}</span>
-                  <div class="value">
+                  <span class="friendly-name" style="display:${showName ? 'block' : 'none'}">${friendlyName}</span>
+                  <div class="value" style="font-size: ${fontSize}vh;">
                     <span class="state">${state}</span>
                     <span class="unit">${unit}</span>
                   </div>
@@ -583,10 +550,10 @@ export class ScreensaverCard extends LitElement {
         id="dynamic-card"
         style="padding: 30px;"
         class="${this._isEditor ? "ineditor" : ""}"
-        @click=${() =>
-          this.config.landing_page
-            ? this.navigateTo(this.config.landing_page)
-            : null}
+        @click=${() => {
+          if (this.config?.hide_bar) this.restoreOriginalState();
+          if (this.config?.landing_page) this.navigateTo(this.config.landing_page);
+        }}
       >
         ${this.cg_alert ? html` <div class="cg-alert"></div> ` : ""}
         <div id="icon-state-div" class="icon-state-div-class">
@@ -650,6 +617,14 @@ export class ScreensaverCard extends LitElement {
               })
             : html`<div>No entities configured or active</div>`}
         </div>
+
+        ${this.config?.weather_attribution_entity
+          ? html`
+              <div class="weather-attribution">
+                ${this.hass.states[this.config.weather_attribution_entity]?.attributes?.attribution || ""}
+              </div>
+            `
+          : ""}
 
         <div id="date-time">
           <div class="time">

@@ -110,6 +110,14 @@ class ScreesaverEditor extends LitElement {
 
       <ha-expansion-panel outlined>
         <h4 slot="header">
+          <ha-icon icon="mdi:weather-cloudy-clock"></ha-icon>
+          Weather Attribution Entity
+        </h4>
+        <div class="content">${this._renderWeatherAttributionSelector()}</div>
+      </ha-expansion-panel>
+
+      <ha-expansion-panel outlined>
+        <h4 slot="header">
           <ha-icon icon="mdi:calendar"></ha-icon>
           Calendar Selector
         </h4>
@@ -375,6 +383,8 @@ class ScreesaverEditor extends LitElement {
 
   private _renderValueEntitySelector() {
     const allEntities = Object.keys(this.hass.states); // Recupera tutte le entità disponibili
+    const showName = this._config?.value_entity_show_name ?? false;
+    const fontSize = this._config?.value_entity_font_size ?? 5;
 
     return html`
       <div class="select-container">
@@ -393,6 +403,30 @@ class ScreesaverEditor extends LitElement {
           ></ha-icon>
         </div>
         ${this._renderValueEntityList()}
+
+        <div style="margin-top: 2ch;">
+          <label style="display: flex; align-items: center; gap: 1ch; cursor: pointer;">
+            <input
+              type="checkbox"
+              .checked=${showName}
+              @change=${this._toggleValueEntityShowName}
+            />
+            Show entity name
+          </label>
+        </div>
+
+        <div style="margin-top: 1ch; display: flex; align-items: center; gap: 1ch;">
+          <label for="value_entity_font_size">Value font size (vh):</label>
+          <input
+            class="inputNumber"
+            id="value_entity_font_size"
+            type="number"
+            min="1"
+            max="30"
+            .value=${String(fontSize)}
+            @change=${this._updateValueEntityFontSize}
+          />
+        </div>
       </div>
     `;
   }
@@ -831,5 +865,70 @@ class ScreesaverEditor extends LitElement {
     if (inputElement) {
       inputElement.value = "";
     }
+  }
+
+  private _toggleValueEntityShowName(event: Event) {
+    const checked = (event.target as HTMLInputElement).checked;
+    this._config = { ...this._config, value_entity_show_name: checked };
+    this._dispatchConfigUpdate();
+  }
+
+  private _updateValueEntityFontSize(event: Event) {
+    const value = parseFloat((event.target as HTMLInputElement).value);
+    if (!isNaN(value) && value > 0) {
+      this._config = { ...this._config, value_entity_font_size: value };
+      this._dispatchConfigUpdate();
+    }
+  }
+
+  private _renderWeatherAttributionSelector() {
+    const allEntities = Object.keys(this.hass.states).filter((id) =>
+      id.startsWith("weather.")
+    );
+    const current = this._config?.weather_attribution_entity ?? "";
+
+    return html`
+      <div class="select-container">
+        <div class="heading">Select entity to show weather attribution</div>
+        <div style="display: flex; align-items: center;">
+          <select
+            id="weather_attribution_select"
+            class="select-item"
+            .value=${current}
+            @change=${this._setWeatherAttributionEntity}
+          >
+            <option value="">-- None --</option>
+            ${allEntities.map(
+              (entityId) =>
+                html`<option value="${entityId}" ?selected=${entityId === current}>${entityId}</option>`
+            )}
+          </select>
+          <ha-icon
+            icon="mdi:delete"
+            @click=${this._removeWeatherAttributionEntity}
+          ></ha-icon>
+        </div>
+        ${current
+          ? html`<div style="margin-top: 1ch;">Current: <strong>${current}</strong></div>`
+          : ""}
+      </div>
+    `;
+  }
+
+  private _setWeatherAttributionEntity(event: Event) {
+    const value = (event.target as HTMLSelectElement).value;
+    if (value) {
+      this._config = { ...this._config, weather_attribution_entity: value };
+    } else {
+      this._removeWeatherAttributionEntity();
+      return;
+    }
+    this._dispatchConfigUpdate();
+  }
+
+  private _removeWeatherAttributionEntity() {
+    const { weather_attribution_entity, ...newConfig } = this._config;
+    this._config = newConfig;
+    this._dispatchConfigUpdate();
   }
 }

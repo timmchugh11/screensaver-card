@@ -173,6 +173,14 @@ export default css`
     font-size: 4vh;
     color: #757575;
     }
+    .weather-attribution {
+    font-size: 30px;
+    grid-area: icon;
+    font-family: monospace;
+    color: white;
+    align-self: end;
+    justify-self: start;
+    }
     .events {
     display: flex;
     flex-direction: column;
