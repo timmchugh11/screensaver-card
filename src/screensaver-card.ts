@@ -431,7 +431,7 @@ export class ScreensaverCard extends LitElement {
               const unit = entityState.attributes.unit_of_measurement || "";
 
               const showName = this.config?.value_entity_show_name ?? true;
-              const fontSize = this.config?.value_entity_font_size ?? 5;
+              const fontSize = this.config?.value_entity_font_size ?? 2;
               return html`
                 <div class="entity">
                   <span class="friendly-name" style="display:${showName ? 'block' : 'none'}">${friendlyName}</span>

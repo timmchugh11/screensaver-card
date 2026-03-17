@@ -392,7 +392,7 @@ class ScreesaverEditor extends LitElement {
 
   private _renderValueEntitySelector() {
     const showName = this._config?.value_entity_show_name ?? true;
-    const fontSize = this._config?.value_entity_font_size ?? 5;
+    const fontSize = this._config?.value_entity_font_size ?? 2;
     const schema = [
       {
         name: "value_entity_candidate",
