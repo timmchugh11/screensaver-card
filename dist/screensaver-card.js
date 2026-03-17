@@ -216,10 +216,10 @@ const rt=t=>e=>"function"==typeof e?((t,e)=>(customElements.define(t,e),e))(t,e)
     font-size: 4vh;
     color: #757575;
     }
-    .weather-attribution {
+    .text-item-attribution {
     font-size: 30px;
     grid-area: icon;
-    font-family: monospace;
+    font-family: bw_font;
     color: white;
     align-self: end;
     justify-self: start;
@@ -794,7 +794,7 @@ const rt=t=>e=>"function"==typeof e?((t,e)=>(customElements.define(t,e),e))(t,e)
         </div>
 
         ${$?D`
-              <div class="weather-attribution">
+              <div class="text-item-attribution">
                 ${$}
               </div>
             `:""}

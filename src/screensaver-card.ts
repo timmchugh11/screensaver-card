@@ -639,7 +639,7 @@ export class ScreensaverCard extends LitElement {
 
         ${attributionText
           ? html`
-              <div class="weather-attribution">
+              <div class="text-item-attribution">
                 ${attributionText}
               </div>
             `

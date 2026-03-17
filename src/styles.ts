@@ -173,10 +173,10 @@ export default css`
     font-size: 4vh;
     color: #757575;
     }
-    .weather-attribution {
+    .text-item-attribution {
     font-size: 30px;
     grid-area: icon;
-    font-family: monospace;
+    font-family: bw_font;
     color: white;
     align-self: end;
     justify-self: start;
